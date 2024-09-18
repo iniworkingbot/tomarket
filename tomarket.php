@@ -9,7 +9,9 @@ for ($i = 0; $i < count($list_query); $i++) {
     if(empty($reff)){
         $auth = get_auth($list_query[$i]);
     }
-    $auth = get_auth($list_query[$i], $reff);
+    else{
+        $auth = get_auth($list_query[$i], $reff);
+    }
     echo "[*] Get Auth : ";
     if($auth){
         echo "success\n";
