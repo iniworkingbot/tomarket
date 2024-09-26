@@ -8,9 +8,11 @@ Awal:
 for ($i = 0; $i < count($list_query); $i++) {
     $c = $i + 1;
     echo "\n[$c]\n";
-    $rand_proxy = array_rand($list_proxy, 1);
-    $proxy = $list_proxy[$rand_proxy];
-    echo "[*] Proxy : ".proxy($proxy)."\n";
+    if($list_proxy){
+        $rand_proxy = array_rand($list_proxy, 1);
+        $proxy = $list_proxy[$rand_proxy];
+        echo "[*] Proxy : ".proxy($proxy)."\n";
+    }
     if(empty($reff)){
         $auth = get_auth($list_query[$i], $proxy);
     }
