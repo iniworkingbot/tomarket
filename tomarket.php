@@ -8,11 +8,9 @@ Awal:
 for ($i = 0; $i < count($list_query); $i++) {
     $c = $i + 1;
     echo "\n[$c]\n";
-    if($list_proxy){
-        $rand_proxy = array_rand($list_proxy, 1);
-        $proxy = $list_proxy[$rand_proxy];
-        echo "[*] Proxy : ".proxy($proxy)."\n";
-    }
+    $rand_proxy = array_rand($list_proxy, 1);
+    $proxy = $list_proxy[$rand_proxy];
+    echo "[*] Proxy : ".proxy($proxy)."\n";
     if(empty($reff)){
         $auth = get_auth($list_query[$i], $proxy);
     }
@@ -25,6 +23,84 @@ for ($i = 0; $i < count($list_query); $i++) {
         $daily = check_daily($auth, $proxy);
         $start_farm = start_farm($auth, $proxy);
         echo "[*] Start Farm : $start_farm\n";
+        $check_rank = check_rank($auth, $list_query[$i], $proxy)['isCreated'];
+        echo "[*] Check Rank : ";
+        if($check_rank == 0){
+            echo "failed\n";
+            $create_rank = create_rank($auth, $proxy)['isCreated'];
+            echo "[*] Create Rank : ";
+            if($create_rank == 1){
+                echo "success\n";
+                $data_rank = check_rank($auth, $list_query[$i], $proxy);
+                echo "[*] Rank : ".$data_rank['futureRankName']."\n";
+                $next_rank = $data_rank['nextRank'];
+                echo "[*] Next Rank : ".$next_rank['name']."\n";
+                $min_point = $next_rank['minStar'];
+                $used_point = $data_rank['usedStars'];
+                $available_point = $data_rank['unusedStars'];
+                echo "[*] Available Point : $available_point\n";
+                if($available_point > 0){
+                    for ($a = 0; $a < $available_point; $a++) {
+                        sleep(10);
+                        $id = $available_point - $a;
+                        $upgrade_rank = upgrade_rank($id, $auth, $proxy);
+                        echo "[*] Upgrade Rank : ";
+                        if($upgrade_rank['isUpgrade'] == 1){
+                            echo "success\n";
+                        }
+                        else{
+                            echo "failed\n";
+                        }
+                    }
+                    $data_rank = check_rank($auth, $list_query[$i], $proxy);
+                    echo "[*] Rank : ".$data_rank['currentRank']['name']."\n";
+                }
+                else{
+                    echo "failed\n";
+                }
+            }
+            else{
+                echo "failed\n";
+            }
+        }
+        else{
+            echo "success\n";
+            $data_rank = check_rank($auth, $list_query[$i], $proxy);
+            echo "[*] Rank : ".$data_rank['futureRankName']."\n";
+            $next_rank = $data_rank['nextRank'];
+            echo "[*] Next Rank : ".$next_rank['name']."\n";
+            $min_point = $next_rank['minStar'];
+            $used_point = $data_rank['usedStars'];
+            $available_point = $data_rank['unusedStars'];
+            echo "[*] Available Point : $available_point\n";
+            if($available_point > 0){
+                for ($a = 0; $a < $available_point; $a++) {
+                    sleep(10);
+                    $id = $available_point - $a;
+                    $upgrade_rank = upgrade_rank($id, $auth, $proxy);
+                    echo "[*] Upgrade Rank : ";
+                    if($upgrade_rank['isUpgrade'] == 1){
+                        echo "success\n";
+                    }
+                    else{
+                        echo "failed\n";
+                    }
+                }
+                $data_rank = check_rank($auth, $list_query[$i], $proxy);
+                echo "[*] Rank : ".$data_rank['currentRank']['name']."\n";
+            }
+        }
+        $check_spin = check_spin($auth, $list_query[$i], $proxy);
+        echo "[*] Play Spin Count : $check_spin\n";
+        if($check_spin > 0){
+            echo "\n";
+            for ($a = 0; $a < $check_spin; $a++) {
+                $c = $a + 1;
+                echo "[-] Play Spin $c\n";
+                spin($auth, $proxy);
+                sleep(10);
+            }
+        }
         Play:
         $play_game_count = get_info($auth, $proxy)['play_passes'];
         echo "[*] Play Game Count : $play_game_count\n";
@@ -103,6 +179,34 @@ function check_daily($auth, $proxy = false){
 function start_farm($auth, $proxy = false){
     $curl = curl("farm/start", $auth, '{"game_id":"53b22103-c7ff-413d-bc63-20f6fb806a07"}', $proxy)['data']['round_id'];
     return $curl;
+}
+
+function check_rank($auth, $query, $proxy = false){
+    $curl = curl("rank/data", $auth, "{\"language_code\":\"en\",\"init_data\":\"$query\"}", $proxy)['data'];
+    return $curl;
+}
+
+function create_rank($auth, $proxy = false){
+    $evaluate = curl("rank/evaluate", $auth, "{}", $proxy)['data'];
+    if($evaluate){
+        $curl = curl("rank/create", $auth, "{}", $proxy)['data'];
+        return $curl;
+    }
+}
+
+function upgrade_rank($id, $auth, $proxy = false){
+    $curl = curl("rank/upgrade", $auth, "{\"stars\":$id}", $proxy)['data'];
+    return $curl;
+}
+
+function check_spin($auth, $query, $proxy = false){
+    $curl = curl("user/tickets", $auth, "{\"language_code\":\"en\",\"init_data\":\"$query\"}", $proxy)['data']['ticket_spin_1'];
+    return $curl;
+}
+
+function spin($auth, $proxy = false){
+    $curl = curl("spin/raffle", $auth, "{\"category\":\"ticket_spin_1\"}", $proxy)['data']['results'][0];
+    echo "\t[>] ".$curl['amount']." ".$curl['type']."\n";
 }
 
 function get_info($auth, $proxy = false){
